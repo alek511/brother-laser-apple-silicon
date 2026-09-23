@@ -6,33 +6,27 @@ mono laser printers on macOS 27 / Apple Silicon.
 Brother's own macOS driver (`rastertobrother*`, last built in 2019) is Intel‑only. If your
 Mac has no Rosetta 2 — or once Apple limits it — macOS refuses the driver. Most of these
 printers have no AirPrint either (they only speak Brother's HBP raster), so a driver is
-required. This repository ships **[brlaser](https://github.com/pdewacht/brlaser)**, the
-open‑source CUPS driver that has supported these printers on Linux for a decade, **prebuilt
-for arm64** together with its PPDs and a one‑command installer.
+required. This repository ships **[brlaser](https://github.com/Owl-Maintain/brlaser)** (the maintained
+fork, v6.2.8), the open‑source CUPS driver that has supported these printers on Linux and BSD
+for a decade, **prebuilt for arm64** together with its 102 PPDs and a one‑command installer.
 
-> **Built from brlaser `master` (2a49e328, 2023‑02‑20), not the v6 release — on purpose.**
-> v6 splits the raster into 64‑line blocks, and the HL‑1110/1210W/DCP‑1610W engine silently
-> drops complex pages encoded that way (the printer clicks once, nothing comes out, CUPS
-> reports success — [issue #40](https://github.com/pdewacht/brlaser/issues/40),
-> [PR #68](https://github.com/pdewacht/brlaser/pull/68)). `master` uses 128‑line bands like
-> Brother's own driver and prints everything. Verified on a DCP‑1610W: v6 → 0 pages,
-> master → prints.
+> **Why the maintained fork and not the original v6 release:** the 2019 `pdewacht/brlaser` v6
+> tarball splits the raster into 64‑line blocks, and the HL‑1110/1210W/DCP‑1610W engine silently
+> drops complex pages encoded that way (printer clicks once, nothing comes out, CUPS reports
+> success — [issue #40](https://github.com/pdewacht/brlaser/issues/40)). The fix (128‑line bands,
+> like Brother's driver) never got a release upstream; `Owl-Maintain/brlaser` carries it, plus
+> ~70 more models, real 1200 dpi modes and per‑model device IDs. Verified on a DCP‑1610W with the
+> same raster: v6 → 0 pages, fork → prints.
 
 Also read this if you want the **"Open Scanner…"** button to survive on an all‑in‑one
 (DCP/MFC): see [Scanner](#scanner-dcpmfc-models).
 
 ## Supported printers
 
-Everything brlaser supports:
-
-DCP‑1510, DCP‑1600 series (1600/1602/1610W/1612W/1617NW/1618W), DCP‑7030, DCP‑7040,
-DCP‑7055, DCP‑7055W, DCP‑7060D, DCP‑7065DN, DCP‑7080, DCP‑7080D, DCP‑L2500D, DCP‑L2520D,
-DCP‑L2540DW, HL‑1110, HL‑1200, HL‑2030 series, HL‑2140 series, HL‑2220 series,
-HL‑2270DW series, HL‑5030 series, HL‑L2300D, HL‑L2320D, HL‑L2340D, HL‑L2360D,
-MFC‑1910W, MFC‑7240, MFC‑7360N, MFC‑7365DN, MFC‑L2710DW series.
-
-If your model is not listed, try the closest one — brlaser's README says most of the
-family works with any entry marked "brlaser".
+All 102 models in `Owl-Maintain/brlaser` v6.2.8 — the `ppd/` directory is the list. Families:
+HL‑1xxx / HL‑2xxx / HL‑5xxx, HL‑L2300…L2480, HL‑L5000/L5800, DCP‑1510/1600/1610W, DCP‑7xxx,
+DCP‑L2500…L2560, MFC‑1910W, MFC‑7xxx, MFC‑L2685…L2750, MFC‑L2800, plus a few Fuji Xerox and
+Lenovo rebadges. Not listed? Try the closest model or the generic `Brother Laser (brlaser)` entry.
 
 ## Install
 
@@ -74,9 +68,10 @@ The **"Open Scanner…"** button in the printer's card in System Settings appear
 3. the queue was created **through System Settings**, not `lpadmin` — the link is made by
    the Settings app at add time.
 
-`ppd-tuned/` contains PPDs already tuned for point 2. For another model, copy the stock
-PPD, set `*ModelName` / `*ShortNickName` / `*Product` to the exact name the printer
-advertises (`dns-sd -B _scanner._tcp local` shows it), and install it alongside.
+The fork's PPDs already name each model the way the printer advertises itself (e.g.
+`Brother DCP-1610W series`), so point 2 holds out of the box for the models it lists. For a
+model that only has a generic entry, copy the PPD, set `*ModelName` / `*ShortNickName` /
+`*Product` to the exact name from `dns-sd -B _scanner._tcp local`, and install it alongside.
 
 Without the button the scanner is still available from Image Capture and every app's
 "Import from scanner".
@@ -92,8 +87,8 @@ or `sudo softwareupdate --install-rosetta --agree-to-license` to keep using Brot
 
 **The printer clicks once, nothing comes out, CUPS says "completed".**
 The classic brlaser **v6** failure on the 1110/1210W/1610W engine: simple text prints,
-anything denser is dropped. You are running a v6 build — install this one (built from
-`master`, 128‑line bands). If it still happens, capture the job and open an issue
+anything denser is dropped. You are running the old v6 build — install this one (Owl‑Maintain fork,
+128‑line bands). If it still happens, capture the job and open an issue
 (template included).
 
 **Job says "Sending" / "Connecting to printer" and never prints.**
@@ -108,7 +103,7 @@ System Settings**. Replacing the PPD with `lpadmin` never creates the button —
 queue and add it again in Settings.
 
 **Driver not in the "Select Software…" list.**
-`lpinfo -m | grep brlaser` should list 30 entries. If it is empty, the PPDs still carry
+`lpinfo -m | grep brlaser` should list about 100 entries. If it is empty, the PPDs still carry
 the quarantine flag (installer skipped?) — re‑run `sudo ./install.sh`.
 
 **"Printer drivers are deprecated" warning from `lpadmin`.**
@@ -146,7 +141,7 @@ blocks work, `master` works.
 
 ```sh
 brew install cmake
-./build.sh        # downloads brlaser master (or ./build.sh 6 for a tag), builds, regenerates bin/ and ppd/
+./build.sh          # Owl-Maintain/brlaser v6.2.8 → bin/ and ppd/;  ./build.sh master for the branch tip
 ```
 
 Works on Intel Macs too (it just builds x86_64).
@@ -166,8 +161,9 @@ Works on Intel Macs too (it just builds x86_64).
 
 ## Credits and license
 
-The driver is [brlaser](https://github.com/pdewacht/brlaser) by Peter De Wachter,
-GPL‑2.0‑or‑later. This repository only builds it for macOS/arm64 and adds the PPD tweaks,
-scripts and documentation. Same license — see `LICENSE`.
+The driver is [brlaser](https://github.com/pdewacht/brlaser) by Peter De Wachter, maintained
+today as [Owl-Maintain/brlaser](https://github.com/Owl-Maintain/brlaser); GPL‑2.0‑or‑later.
+This repository only builds it for macOS/arm64 and adds the PPD tweaks, scripts and
+documentation. Same license — see `LICENSE`.
 
 Русская версия: [README.ru.md](README.ru.md).

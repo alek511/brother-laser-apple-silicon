@@ -15,7 +15,7 @@ chmod 755 "$DEST/rastertobrlaser"
 # a GitHub download carries a quarantine flag that keeps cupsd from executing the filter
 xattr -d com.apple.quarantine "$DEST/rastertobrlaser" 2>/dev/null || true
 n=0
-for f in "$HERE"/ppd/*.ppd "$HERE"/ppd-tuned/*.ppd; do
+for f in "$HERE"/ppd/*.ppd; do
   cp "$f" "$PPDDIR/"; xattr -d com.apple.quarantine "$PPDDIR/$(basename "$f")" 2>/dev/null || true; n=$((n+1))
 done
 chown -R root:wheel "$DEST"
