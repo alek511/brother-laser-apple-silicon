@@ -3,11 +3,11 @@
 # Needs Xcode Command Line Tools and cmake (brew install cmake).
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
-VER=${1:-6}
+REF=${1:-master}
 WORK="$(mktemp -d)"
-curl -sL -o "$WORK/brlaser.tar.gz" "https://github.com/pdewacht/brlaser/archive/refs/tags/v$VER.tar.gz"
+curl -sL -o "$WORK/brlaser.tar.gz" "https://github.com/pdewacht/brlaser/archive/$( [ "$REF" = master ] && echo refs/heads/master.tar.gz || echo refs/tags/v$REF.tar.gz )"
 tar xzf "$WORK/brlaser.tar.gz" -C "$WORK"
-cd "$WORK/brlaser-$VER"
+cd "$WORK"/brlaser-*
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 >/dev/null
 cmake --build build >/dev/null
 mkdir -p build/ppd && ppdc build/brlaser.drv -d build/ppd >/dev/null
@@ -22,4 +22,4 @@ for f in build/ppd/*.ppd; do
 *APICADriver: True|' "$HERE/ppd/$n"
   fi
 done
-echo "Built brlaser v$VER: $(file -b "$HERE/bin/rastertobrlaser" | cut -d, -f1-2), $(ls "$HERE/ppd" | wc -l | tr -d ' ') PPDs"
+echo "Built brlaser $REF: $(file -b "$HERE/bin/rastertobrlaser" | cut -d, -f1-2), $(ls "$HERE/ppd" | wc -l | tr -d ' ') PPDs"

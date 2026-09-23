@@ -10,12 +10,20 @@ required. This repository ships **[brlaser](https://github.com/pdewacht/brlaser)
 open‑source CUPS driver that has supported these printers on Linux for a decade, **prebuilt
 for arm64** together with its PPDs and a one‑command installer.
 
+> **Built from brlaser `master` (2a49e328, 2023‑02‑20), not the v6 release — on purpose.**
+> v6 splits the raster into 64‑line blocks, and the HL‑1110/1210W/DCP‑1610W engine silently
+> drops complex pages encoded that way (the printer clicks once, nothing comes out, CUPS
+> reports success — [issue #40](https://github.com/pdewacht/brlaser/issues/40),
+> [PR #68](https://github.com/pdewacht/brlaser/pull/68)). `master` uses 128‑line bands like
+> Brother's own driver and prints everything. Verified on a DCP‑1610W: v6 → 0 pages,
+> master → prints.
+
 Also read this if you want the **"Open Scanner…"** button to survive on an all‑in‑one
 (DCP/MFC): see [Scanner](#scanner-dcpmfc-models).
 
 ## Supported printers
 
-Everything brlaser v6 supports:
+Everything brlaser supports:
 
 DCP‑1510, DCP‑1600 series (1600/1602/1610W/1612W/1617NW/1618W), DCP‑7030, DCP‑7040,
 DCP‑7055, DCP‑7055W, DCP‑7060D, DCP‑7065DN, DCP‑7080, DCP‑7080D, DCP‑L2500D, DCP‑L2520D,
@@ -79,7 +87,7 @@ Delete the printer in System Settings, then `sudo ./uninstall.sh`.
 
 ```sh
 brew install cmake
-./build.sh        # downloads brlaser v6, builds, regenerates bin/ and ppd/
+./build.sh        # downloads brlaser master (or ./build.sh 6 for a tag), builds, regenerates bin/ and ppd/
 ```
 
 Works on Intel Macs too (it just builds x86_64).
