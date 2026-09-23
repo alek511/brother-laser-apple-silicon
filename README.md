@@ -36,6 +36,8 @@ family works with any entry marked "brlaser".
 
 ## Install
 
+Download the [latest release](https://github.com/alek511/brother-laser-apple-silicon/releases/latest) and unpack it, or:
+
 ```sh
 git clone https://github.com/alek511/brother-laser-apple-silicon.git
 cd brother-laser-apple-silicon
@@ -79,9 +81,66 @@ advertises (`dns-sd -B _scanner._tcp local` shows it), and install it alongside.
 Without the button the scanner is still available from Image Capture and every app's
 "Import from scanner".
 
+## Troubleshooting
+
+Everything below was hit while getting a DCP‑1610W to print on macOS 27. Each entry is
+*symptom → cause → fix*.
+
+**"The printer software is not compatible with this device."**
+Brother's driver is Intel‑only and your Mac has no Rosetta 2. Either install this driver,
+or `sudo softwareupdate --install-rosetta --agree-to-license` to keep using Brother's.
+
+**The printer clicks once, nothing comes out, CUPS says "completed".**
+The classic brlaser **v6** failure on the 1110/1210W/1610W engine: simple text prints,
+anything denser is dropped. You are running a v6 build — install this one (built from
+`master`, 128‑line bands). If it still happens, capture the job and open an issue
+(template included).
+
+**Job says "Sending" / "Connecting to printer" and never prints.**
+Check the printer itself first: `nc -z <printer-ip> 9100` must succeed, and the printer's
+web page (its IP in a browser) should say Ready or Sleep, not an error. Power‑cycle it once —
+a run of broken jobs (e.g. from the Intel driver failing mid‑send) can wedge the engine.
+
+**No "Open Scanner…" button on a DCP/MFC.**
+Three conditions (see [Scanner](#scanner-dcpmfc-models)): `*APICADriver: True` in the
+PPD, `*ModelName` equal to the scanner's Bonjour name, and the queue added **through
+System Settings**. Replacing the PPD with `lpadmin` never creates the button — delete the
+queue and add it again in Settings.
+
+**Driver not in the "Select Software…" list.**
+`lpinfo -m | grep brlaser` should list 30 entries. If it is empty, the PPDs still carry
+the quarantine flag (installer skipped?) — re‑run `sudo ./install.sh`.
+
+**"Printer drivers are deprecated" warning from `lpadmin`.**
+Informational. Apple deprecated PPD drivers; they work on macOS 27. Brother's own driver
+gets the same warning.
+
+**"Use generic printer features" toggle in the printer's options.**
+Leave it off. On, macOS ignores the PPD's options.
+
+**Wrong or generic icon.**
+Expected: Brother's icons are Brother's artwork and are not shipped here. If Brother's
+package is installed, add `*APPrinterIconPath: "/Library/Printers/Brother/Icons/<model>.icns"`
+to your PPD.
+
+**1200 dpi prints nothing.**
+Known on some 1600‑series units (brlaser #173). Use 600 dpi.
+
+## How the v6 problem was found
+
+Worth recording, because the symptom points everywhere except the real cause. Text pages
+printed; a PDF from Preview did not, yet CUPS reported success and the printer accepted every
+byte on port 9100. Sending the same bytes straight to the port with `nc` printed — so the
+transport was innocent. Capturing the job with a local `socket://127.0.0.1` queue showed
+CUPS emitted exactly the bytes that printed raw. What differed was the *page*: Preview's
+raster is denser than a fresh render of the same file. Capturing Preview's raster
+(`cupsFilter … rastertopwg` to a local socket), encoding it with three builds and sending
+each with a different copy count (1 / 2 / 4) gave 0 + 2 + 4 sheets: v6 fails, 32‑line
+blocks work, `master` works.
+
 ## Uninstall
 
-Delete the printer in System Settings, then `sudo ./uninstall.sh`.
+`sudo ./uninstall.sh` — removes the print queues that use brlaser, the PPDs and the filter. Nothing else is touched.
 
 ## Rebuild from source
 
