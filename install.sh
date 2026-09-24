@@ -20,7 +20,12 @@ for f in "$HERE"/ppd/*.ppd; do
 done
 chown -R root:wheel "$DEST"
 # verify
-"$DEST/rastertobrlaser" 2>&1 | grep -q "Need arguments" || { echo "ERROR: the filter does not run on this Mac"; exit 1; }
+# verify the filter actually runs here (it prints its usage and exits 1; exit 137 = killed by the OS)
+rc=0; out=$("$DEST/rastertobrlaser" 2>&1) || rc=$?
+case "$out" in
+  *"rastertobrlaser job-id"*) ;;
+  *) echo "ERROR: the filter does not run on this Mac (exit $rc)"; [ "$rc" = 137 ] && echo "It was killed by macOS; check: xattr -l $DEST/rastertobrlaser"; exit 1 ;;
+esac
 seen=$(lpinfo -m 2>/dev/null | grep -c brlaser || true)
 echo "Installed: filter OK, $n PPDs copied, $seen brlaser drivers visible to macOS."
 echo

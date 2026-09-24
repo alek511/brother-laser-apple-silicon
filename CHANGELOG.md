@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1 — 2026-09-25
+
+- **Fix:** `install.sh` always ended with "ERROR: the filter does not run on this Mac" after a
+  successful install. Its self-check looked for "Need arguments" — a message from Brother's own
+  filter that brlaser never prints (present since 1.0.0). It now checks for brlaser's real usage
+  line and reports when macOS kills the filter.
+- **Docs corrected:** CUPS does not check code signatures or quarantine. What actually happens,
+  tested on macOS 27 with a DCP‑1610W: a quarantined filter is killed by macOS (Gatekeeper) when
+  CUPS starts it — the job reports *completed* and nothing prints; a filter not owned by root is
+  refused by CUPS ("insecure permissions"). The installer handles both; troubleshooting updated.
+
 ## 1.1.0 — 2026-09-24
 
 - Switched to the maintained fork **Owl-Maintain/brlaser v6.2.8**: 102 PPDs (was 29), real

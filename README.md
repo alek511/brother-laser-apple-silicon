@@ -51,8 +51,10 @@ What the installer puts on disk:
 - `/Library/Printers/brlaser/rastertobrlaser` — the filter, arm64, ad‑hoc signed (62 KB)
 - `/Library/Printers/PPDs/Contents/Resources/*.ppd` — one PPD per model
 
-It also strips the `com.apple.quarantine` flag that a GitHub download carries; without
-that, `cupsd` refuses to execute the filter.
+It also strips the `com.apple.quarantine` flag that a downloaded zip passes on to the files
+inside it. CUPS itself doesn't check it, but macOS does: a quarantined filter is killed the moment
+CUPS starts it, the job still reports *completed*, and nothing prints. The filter must also be
+owned by root (CUPS enforces that), which is why the installer runs under `sudo`.
 
 ## Scanner (DCP/MFC models)
 
@@ -103,8 +105,15 @@ System Settings**. Replacing the PPD with `lpadmin` never creates the button —
 queue and add it again in Settings.
 
 **Driver not in the "Select Software…" list.**
-`lpinfo -m | grep brlaser` should list about 100 entries. If it is empty, the PPDs still carry
-the quarantine flag (installer skipped?) — re‑run `sudo ./install.sh`.
+`lpinfo -m | grep brlaser` should list about 100 entries. If it doesn't, the installer didn't finish —
+re‑run `sudo ./install.sh` and read its last lines.
+
+**Job says "Completed" right after installing, but nothing printed.**
+Check the filter: `xattr -l /Library/Printers/brlaser/rastertobrlaser` must not show
+`com.apple.quarantine`, and `ls -l` must show `root wheel`. A quarantined filter is killed by macOS
+(`log show --last 5m | grep rastertobrlaser` shows "Security policy would not allow process"); a
+user‑owned one is refused by CUPS ("insecure permissions" in `/var/log/cups/error_log`). Re‑running
+`sudo ./install.sh` fixes both.
 
 **"Printer drivers are deprecated" warning from `lpadmin`.**
 Informational. Apple deprecated PPD drivers; they work on macOS 27. Brother's own driver
