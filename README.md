@@ -1,5 +1,10 @@
 # Brother laser printers on Apple Silicon — native driver, no Rosetta
 
+> **Transparency note:** the owner of this repository is not a developer. The driver build, the
+> scripts, the investigation and these docs were produced by Claude (Anthropic's AI) in Claude Code;
+> the owner ran the `sudo` steps and checked the printed pages on a real DCP-1610W. The driver itself
+> is [brlaser](https://github.com/Owl-Maintain/brlaser) by its own authors — see *Credits*.
+
 Fixes **"The printer software is not compatible with this device"** for older Brother
 mono laser printers on macOS 27 / Apple Silicon.
 
