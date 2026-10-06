@@ -77,6 +77,11 @@ The fork's PPDs already name each model the way the printer advertises itself (e
 model that only has a generic entry, copy the PPD, set `*ModelName` / `*ShortNickName` /
 `*Product` to the exact name from `dns-sd -B _scanner._tcp local`, and install it alongside.
 
+How the link works: when System Settings adds a DCP/MFC printer, it writes the scanner link into
+that printer's own copy of the PPD (`*APScannerUUID`, `*APScannerModulePath`). Anything that later
+replaces that copy, such as `lpadmin -P` or an installer refreshing printers, drops the link and the
+button disappears. Removing the printer and adding it again in System Settings brings it back.
+
 Without the button the scanner is still available from Image Capture and every app's
 "Import from scanner".
 
@@ -100,11 +105,18 @@ Check the printer itself first: `nc -z <printer-ip> 9100` must succeed, and the 
 web page (its IP in a browser) should say Ready or Sleep, not an error. Power‑cycle it once —
 a run of broken jobs (e.g. from the Intel driver failing mid‑send) can wedge the engine.
 
+**Prints lighter after upgrading from 1.0.0.**
+A printer added with 1.0.0 keeps that version's PPD, which has no toner‑density option, and the
+6.2.x filter then sends `DENSITY=-100`. The page comes out lighter, most visibly on solid black
+areas (checked side by side on a DCP‑1610W). `install.sh` lists such printers at the end. Fix:
+remove the printer in System Settings and add it again with the brlaser driver. Replacing the PPD
+with `lpadmin -P` also fixes printing, but the "Open Scanner…" button disappears (see below).
+
 **No "Open Scanner…" button on a DCP/MFC.**
 Three conditions (see [Scanner](#scanner-dcpmfc-models)): `*APICADriver: True` in the
 PPD, `*ModelName` equal to the scanner's Bonjour name, and the queue added **through
-System Settings**. Replacing the PPD with `lpadmin` never creates the button — delete the
-queue and add it again in Settings.
+System Settings**. Replacing the PPD with `lpadmin` never creates the button and removes an existing one;
+delete the queue and add it again in Settings.
 
 **Driver not in the "Select Software…" list.**
 `lpinfo -m | grep brlaser` should list about 100 entries. If it doesn't, the installer didn't finish —
@@ -159,6 +171,11 @@ Works on Intel Macs too (it just builds x86_64).
 
 ## Notes
 
+- Upstream `Owl-Maintain/brlaser` master now builds and installs on macOS by itself
+  (`cmake`, then `sudo cmake --install`; the PPDs get the absolute filter path and the scanner
+  key, and CI checks every PPD). The latest tagged release, 6.2.8, predates that, which is why
+  this repository still ships a prebuilt 6.2.8. Once upstream tags a release with macOS support,
+  building from upstream is the better option.
 - Apple has deprecated PPD‑based drivers (`lpadmin` prints a warning). They still work on
   macOS 27. The long‑term escape hatch for these printers is a Raspberry Pi / any Linux box
   running CUPS + brlaser, sharing the printer as AirPrint.

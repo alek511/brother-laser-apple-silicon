@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2 — 2026-10-06
+
+- **Upgrade warning:** printers added with 1.0.0 keep its PPD, which has no toner‑density option;
+  the 6.2.x filter then sends `DENSITY=-100` and prints lighter (confirmed side by side on a
+  DCP‑1610W). `install.sh` now lists such printers and says how to re‑add them.
+- **Docs:** why the "Open Scanner…" button disappears (System Settings stores the scanner link in
+  the printer's own PPD copy; replacing it with `lpadmin -P` drops the link), and a note that
+  upstream master now supports macOS directly.
+
 ## 1.1.1 — 2026-09-25
 
 - **Fix:** `install.sh` always ended with "ERROR: the filter does not run on this Mac" after a
